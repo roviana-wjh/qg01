@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>二手交易平台</title>
+    <link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/element-plus"></script>
+    <style>
+        body {
+            background-color: #e9ecef;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .dashboard-container {
+            width: 100%;
+            max-width: 450px;
+            padding: 30px;
+        }
+        .el-card {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            border: none;
+            padding: 30px;
+        }
+        .el-card h2 {
+            color: #343a40;
+            text-align: center;
+            margin-bottom: 30px;
+            font-weight: 500;
+        }
+        .button-group {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .el-button {
+            padding: 12px 20px;
+            font-size: 16px;
+            border-radius: 8px;
+            border: none;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        .el-button--primary {
+            background-color: #007bff;
+            color: white;
+        }
+        .el-button--primary:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+<div id="app">
+    <div class="dashboard-container">
+        <el-card style="width: 100%; max-width: 400px; text-align: center;">
+            <h2>欢迎回来二手交易平台</h2>
+            <div class="button-group">
+                <el-button type="primary" @click="goTo('login.html')">  用户登录系统</el-button>
+                <el-button type="primary" @click="goTo('aminLogin.html')">管理员登录系统</el-button>
+            </div>
+        </el-card>
+    </div>
+</div>
+
+<script>
+    const { createApp } = Vue;
+
+    createApp({
+        setup() {
+            const goTo = (page) => {
+                window.location.href = page;
+            };
+            return { goTo };
+        }
+    }).use(ElementPlus).mount('#app');
+</script>
+</body>
+</html>

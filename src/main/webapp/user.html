@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>用户中心</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .box { border: 1px solid #ccc; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        h2 { margin: 0 0 10px 0; }
+    </style>
+</head>
+<body>
+<div id="app">
+    <div class="box">
+        <h2>用户信息</h2>
+        <p><strong>用户名：</strong>{{ user.username || '加载中...' }}</p>
+        <p><strong>积分：</strong>{{ user.points !== null ? user.points : '加载中...' }}</p>
+    </div>
+
+    <div class="box">
+        <h2>交易记录</h2>
+        <ul>
+            <li v-for="(item, index) in history" :key="index">
+                交易ID：{{ item.id }} | 商品：{{ item.name }} | 金额：¥{{ item.price.toFixed(2) }}
+            </li>
+            <li v-if="history.length === 0">暂无交易记录</li>
+        </ul>
+    </div>
+</div>
+
+<script>
+    const { createApp, ref, onMounted } = Vue;
+
+    createApp({
+        setup() {
+            const user = ref({ username: '', points: null });
+            const history = ref([]);
+
+            const fetchUser = async () => {
+                try {
+                    const res = await axios.get('/untitled7_war/users?method=user');
+                    user.value = res.data;
+                } catch (err) {
+                    console.error('获取用户信息失败：', err);
+                }
+            };
+
+            const fetchHistory = async () => {
+                try {
+                    const res = await axios.get('/untitled7_war/users?method=getHistory');
+                    history.value = res.data;
+                } catch (err) {
+                    console.error('获取交易记录失败：', err);
+                }
+            };
+
+            onMounted(() => {
+                fetchUser();
+                fetchHistory();
+            });
+
+            return {
+                user,
+                history
+            };
+        }
+    }).mount('#app');
+</script>
+</body>
+</html>

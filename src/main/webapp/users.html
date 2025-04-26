@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>用户管理面板</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f8f9fa;
+            padding: 20px;
+        }
+        .card {
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            max-width: 800px;
+            margin: 0 auto;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h2 {
+            margin-bottom: 20px;
+        }
+        .btn {
+            padding: 8px 16px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .table th, .table td {
+            padding: 10px;
+            border: 1px solid #dee2e6;
+            text-align: center;
+        }
+        .table th {
+            background: #e9ecef;
+        }
+        .loading {
+            margin-top: 10px;
+            color: #6c757d;
+            text-align: center;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+<div id="app">
+    <div class="card">
+        <h2>用户管理</h2>
+
+        <button class="btn" @click="fetchUsers">获取用户数据</button>
+
+        <div v-if="loading" class="loading">数据加载中...</div>
+        <div v-if="error" class="error">{{ error }}</div>
+
+        <table v-if="users.length > 0" class="table">
+            <thead>
+            <tr>
+                <th>用户名 (ID)</th>
+                <th>积分</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr v-for="(user, index) in users" :key="index">
+                <td>{{ user.username }}</td>
+                <td>{{ user.points }}</td>
+            </tr>
+            </tbody>
+        </table>
+
+        <div v-if="users.length === 0 && !loading" class="loading">暂无用户数据</div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/vue@3"></script>
+<script>
+    const { createApp, ref } = Vue;
+
+    createApp({
+        setup() {
+            const users = ref([]);
+            const loading = ref(false);
+            const error = ref('');
+
+            const fetchUsers = async () => {
+                loading.value = true;
+                error.value = '';
+                try {
+                    const res = await fetch('/untitled7_war/doUser?method=getUser', {
+                        credentials: 'include'
+                    });
+
+                    if (!res.ok) {
+                        throw new Error(`HTTP错误: ${res.status}`);
+                    }
+
+                    const data = await res.json();
+                    users.value = data;
+
+                } catch (err) {
+                    console.error(err);
+                    error.value = `加载失败: ${err.message}`;
+                } finally {
+                    loading.value = false;
+                }
+            };
+
+            return {
+                users,
+                loading,
+                error,
+                fetchUsers
+            };
+        }
+    }).mount('#app');
+</script>
+</body>
+</html>

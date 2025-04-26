@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8" />
+    <title>钱包</title>
+    <script src="https://unpkg.com/vue@3"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <style>
+        /* 基础样式 */
+        body {
+            margin: 40px;
+            font-family: "Helvetica Neue", Arial, sans-serif;
+            background-color: #f7f7f7;
+        }
+
+        .wallet-box {
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        /* 卡片样式 */
+        .card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .card h2 {
+            margin: 0 0 20px 0;
+            color: #303133;
+        }
+
+        /* 按钮样式 */
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            border-radius: 4px;
+            border: 1px solid #dcdfe6;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            color: white;
+            background-color: #409eff;
+            border-color: #409eff;
+        }
+
+        .btn-primary:hover {
+            background-color: #66b1ff;
+        }
+
+        /* 对话框样式 */
+        .dialog-mask {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .dialog-wrapper {
+            background: white;
+            width: 300px;
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .dialog-header {
+            font-size: 18px;
+            margin-bottom: 15px;
+        }
+
+        .dialog-footer {
+            margin-top: 20px;
+            text-align: right;
+        }
+
+        /* 输入框样式 */
+        .input-field {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #dcdfe6;
+            border-radius: 4px;
+            box-sizing: border-box;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+<div id="app" class="wallet-box">
+    <div class="card">
+        <h2>我的钱包</h2>
+        <p style="font-size: 20px;">当前余额：<strong style="color: #67C23A">{{ balance.toFixed(2) }}</strong> 元</p>
+        <button class="btn btn-primary" style="margin-top: 20px;" @click="showDialog">充值</button>
+        <button class="btn btn-primary" style="margin-top: 20px;" onclick="window.location.href='payPassword.html'">设置支付密码</button>
+    </div>
+
+    <!-- 对话框 -->
+    <div class="dialog-mask" v-if="dialogVisible">
+        <div class="dialog-wrapper">
+            <div class="dialog-header">充值余额</div>
+            <input
+                    class="input-field"
+                    type="number"
+                    v-model.number="rechargeAmount"
+                    placeholder="输入充值金额"
+            >
+            <div class="dialog-footer">
+                <button class="btn" @click="closeDialog">取消</button>
+                <button class="btn btn-primary" @click="recharge">确认充值</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const { createApp, ref, onMounted } = Vue;
+
+    createApp({
+        setup() {
+            const balance = ref(0);
+            const rechargeAmount = ref(0);
+            const dialogVisible = ref(false);
+
+            const getBalance = async () => {
+                try {
+                    const res = await axios.get('/untitled7_war/users?method=getMoney');
+                    balance.value = res.data;
+                } catch (err) {
+                    alert('获取余额失败');
+                }
+            };
+
+            const showDialog = () => {
+                dialogVisible.value = true;
+            };
+
+            const closeDialog = () => {
+                dialogVisible.value = false;
+                rechargeAmount.value = 0;
+            };
+
+            const recharge = async () => {
+                if (rechargeAmount.value <= 0) {
+                    alert('请输入有效金额');
+                    return;
+                }
+
+                try {
+                    await axios.post('/untitled7_war/users?method=insertMoney', null, {
+                        params: {
+                            addMoney: rechargeAmount.value
+                        }
+                    });
+                    alert('充值成功！');
+                    closeDialog();
+                    await getBalance();
+                } catch (err) {
+                    alert('充值失败');
+                }
+            };
+
+            onMounted(() => {
+                getBalance();
+            });
+
+            return {
+                balance,
+                rechargeAmount,
+                dialogVisible,
+                showDialog,
+                closeDialog,
+                recharge
+            };
+        }
+    }).mount('#app');
+</script>
+</body>
+</html>

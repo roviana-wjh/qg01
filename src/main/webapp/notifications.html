@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>我的通知</title>
+    <script src="https://unpkg.com/vue@3"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <style>
+        body {
+            font-family: sans-serif;
+            background: #f9f9f9;
+            padding: 30px;
+        }
+        .notice-card {
+            background: white;
+            margin-bottom: 15px;
+            padding: 15px 20px;
+            border-left: 5px solid #3498db;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            border-radius: 6px;
+        }
+    </style>
+</head>
+<body>
+<div id="app">
+    <h1>我的通知</h1>
+    <div v-if="loading">加载中...</div>
+    <div v-else-if="notifications.length === 0">暂无通知</div>
+    <div v-else>
+        <div v-for="(notice, index) in notifications" :key="index" class="notice-card">
+            {{ notice }}
+        </div>
+    </div>
+</div>
+
+<script>
+    const { createApp, ref, onMounted } = Vue;
+
+    createApp({
+        setup() {
+            const notifications = ref([]);
+            const loading = ref(true);
+
+            const fetchNotifications = async () => {
+                try {
+                    const res = await axios.get('/untitled7_war/users?method=notifications');
+                    notifications.value = res.data;
+                } catch (err) {
+                    console.error('获取通知失败:', err);
+                } finally {
+                    loading.value = false;
+                }
+            };
+
+            onMounted(fetchNotifications);
+
+            return {
+                notifications,
+                loading
+            };
+        }
+    }).mount('#app');
+</script>
+</body>
+</html>

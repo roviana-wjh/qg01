@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>发货管理系统</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+        .container {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .shipment-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .shipment-table th,
+        .shipment-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #dee2e6;
+        }
+        .shipment-table th {
+            background-color: #e9ecef;
+        }
+        .status {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .status-shipped {
+            background: #d4edda;
+            color: #155724;
+        }
+        .btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 5px;
+        }
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+        .btn-info {
+            background: #17a2b8;
+            color: white;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #6c757d;
+        }
+        .error {
+            color: #dc3545;
+            padding: 10px;
+            background: #f8d7da;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+<div id="app">
+    <div class="container">
+        <h2>我的发货管理</h2>
+
+        <!-- 错误提示 -->
+        <div v-if="error" class="error">{{ error }}</div>
+
+        <!-- 加载状态 -->
+        <div v-if="loading" class="loading">数据加载中...</div>
+
+        <!-- 发货表格 -->
+        <table v-else class="shipment-table">
+            <thead>
+            <tr>
+                <th>商品ID</th>
+                <th>价格</th>
+                <th>买家ID</th>
+                <th>状态</th>
+                <th>操作</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr v-for="item in shipments" :key="item.gid">
+                <td>{{ item.gid }}</td>
+                <td>¥{{ item.price.toFixed(2) }}</td>
+                <td>{{ item.buyusername }}</td>
+                <td>
+                        <span :class="['status', statusClass(item.status)]">
+                            {{ statusText(item.status) }}
+                        </span>
+                </td>
+                <td>
+                    <button
+                            v-if="item.status === 'unrecieved'"
+                            class="btn btn-primary"
+                            @click="updateStatus(item.gid)"
+                            :disabled="item.updating"
+                    >
+                        {{ item.updating ? '处理中...' : '标记发货' }}
+                    </button>
+                    <button
+                            class="btn btn-info"
+                            @click="showDetail(item)"
+                    >
+                        详情
+                    </button>
+                </td>
+            </tr>
+            <tr v-if="shipments.length === 0">
+                <td colspan="6" style="text-align:center">暂无待发货商品</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+<script>
+    const { createApp, ref, onMounted } = Vue;
+
+    createApp({
+        setup() {
+            const shipments = ref([]);
+            const loading = ref(true);
+            const error = ref(null);
+
+            // 获取发货数据
+            const fetchShipments = async () => {
+                try {
+                    loading.value = true;
+                    error.value = null;
+                    const response = await fetch('/untitled7_war/products?method=getUpdate', {
+                        credentials: 'include'
+                    });
+
+                    if (!response.ok) {
+                        if(response.status === 401) {
+                            window.location.href = '/login';
+                            return;
+                        }
+                        throw new Error(`HTTP错误! 状态码: ${response.status}`);
+                    }
+
+                    const data = await response.json();
+                    shipments.value = data.map(item => ({
+                        ...item,
+                        updating: false
+                    }));
+
+                } catch (err) {
+                    error.value = `数据加载失败: ${err.message}`;
+                } finally {
+                    loading.value = false;
+                }
+            };
+
+            // 更新发货状态
+            const updateStatus = async (gid) => {
+                try {
+                    const item = shipments.value.find(i => i.gid === gid);
+                    if (item) item.updating = true;
+
+                    const formData = new URLSearchParams();
+                    formData.append('method', 'updateStatus');
+                    formData.append('gid', gid);
+
+                    const response = await fetch('/untitled7_war/products', {
+                        method: 'POST',
+                        body: formData,
+                        credentials: 'include',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded'
+                        }
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`操作失败: ${response.status}`);
+                    }
+
+                    await fetchShipments();
+                    alert('发货状态更新成功');
+
+                } catch (err) {
+                    error.value = `操作失败: ${err.message}`;
+                } finally {
+                    const item = shipments.value.find(i => i.gid === gid);
+                    if (item) item.updating = false;
+                }
+            };
+
+            // 显示详情
+            const showDetail = (item) => {
+                const detailMessage = [
+                    `商品ID: ${item.gid}`,
+                    `商品名称: ${item.goodsname}`,
+                    `价格: ¥${item.price.toFixed(2)}`,
+                    `买家ID: ${item.buyusername}`,
+                    `卖家ID: ${item.sellerusername}`,
+                    `当前状态: ${statusText(item.status)}`
+                ].join('\n');
+
+                alert(detailMessage);
+            };
+
+            // 状态样式
+            const statusClass = (status) => {
+                return {
+                    pending: 'status-pending',
+                    shipped: 'status-shipped'
+                }[status];
+            };
+
+            // 状态文本
+            const statusText = (status) => {
+                return {
+                    pending: '待发货',
+                    shipped: '已发货'
+                }[status];
+            };
+
+            // 初始化加载
+            onMounted(fetchShipments);
+
+            return {
+                shipments,
+                loading,
+                error,
+                updateStatus,
+                showDetail,
+                statusClass,
+                statusText
+            };
+        }
+    }).mount('#app');
+</script>
+</body>
+</html>

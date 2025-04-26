@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>恢复被封禁用户</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+      background-color: #f8f9fa;
+    }
+
+    .user-card {
+      background-color: white;
+      padding: 15px;
+      margin-bottom: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .user-name {
+      font-weight: bold;
+      font-size: 18px;
+      margin-bottom: 5px;
+    }
+
+    .recover-btn {
+      background-color: #28a745;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .recover-btn:hover {
+      background-color: #218838;
+    }
+
+    .message {
+      margin-top: 10px;
+      color: green;
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+  <h1>被封禁用户列表</h1>
+  <div v-if="users.length === 0">暂无被封禁用户</div>
+
+  <div v-for="user in users" :key="user.username" class="user-card">
+    <div class="user-name">用户名：{{ user.username }}</div>
+    <div>邮箱：{{ user.email }}</div>
+    <button class="recover-btn" @click="recover(user)">恢复用户</button>
+    <div class="message" v-if="user.message">{{ user.message }}</div>
+  </div>
+</div>
+
+<script>
+  const { createApp, ref, onMounted } = Vue;
+
+  createApp({
+    setup() {
+      const users = ref([]);
+
+      const fetchPunishedUsers = async () => {
+        try {
+          const res = await axios.get('/untitled7_war/doUser?method=getPunishedUsers');
+          users.value = res.data.map(user => ({ ...user, message: '' }));
+        } catch (err) {
+          console.error('获取被封禁用户失败', err);
+        }
+      };
+
+      const recover = async (user) => {
+        try {
+          const params = new URLSearchParams();
+          params.append('username', user.username);
+
+          await axios.post('/untitled7_war/doUser?method=recoverUser', params, {
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+          });
+
+          user.message = ' 已成功恢复';
+        } catch (err) {
+          user.message = '恢复失败';
+        }
+      };
+
+      onMounted(fetchPunishedUsers);
+
+      return {
+        users,
+        recover
+      };
+    }
+  }).mount('#app');
+</script>
+</body>
+</html>

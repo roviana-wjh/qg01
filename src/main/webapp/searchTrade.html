@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>管理员交易管理</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        h2 {
+            margin-bottom: 20px;
+        }
+        .btn {
+            padding: 8px 16px;
+            margin-right: 10px;
+            background: #409EFF;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .btn-success {
+            background: #67C23A;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 12px;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .alert {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #e1f3d8;
+            color: #2c662d;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+<div id="app">
+    <div class="container">
+        <h2>📊 交易信息管理</h2>
+
+        <button class="btn" @click="fetchTrades">加载交易信息</button>
+        <button class="btn btn-success" @click="fetchTotal">统计总交易额</button>
+
+        <!-- 表格展示交易信息 -->
+        <table v-if="trades.length > 0">
+            <thead>
+            <tr>
+                <th>商品ID</th>
+                <th>商品名</th>
+                <th>价格</th>
+                <th>卖家ID</th>
+                <th>买家ID</th>
+                <th>类型</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr v-for="trade in trades" :key="trade.gid">
+                <td>{{ trade.gid }}</td>
+                <td>{{ trade.goodsname }}</td>
+                <td>¥{{ trade.price.toFixed(2) }}</td>
+                <td>{{ trade.sellusername }}</td>
+                <td>{{ trade.buyusername }}</td>
+                <td>{{ trade.type }}</td>
+            </tr>
+            </tbody>
+        </table>
+
+        <!-- 没有数据时提示 -->
+        <div v-else style="margin-top:20px; color: #999;">暂无交易数据</div>
+
+        <!-- 显示总交易额 -->
+        <div v-if="total !== null" class="alert">
+            总交易额：¥{{ total.toFixed(2) }}
+        </div>
+
+    </div>
+</div>
+
+<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+<script>
+    const { createApp, ref } = Vue;
+
+    createApp({
+        setup() {
+            const trades = ref([]);
+            const total = ref(null);
+
+            const fetchTrades = async () => {
+                try {
+                    const res = await fetch('/untitled7_war/search?method=serchTrade');
+                    trades.value = await res.json();
+                } catch (err) {
+                    console.error('获取交易信息失败', err);
+                    trades.value = [];
+                }
+            };
+
+            const fetchTotal = async () => {
+                try {
+                    const res = await fetch('/untitled7_war/search?method=statistic');
+                    const data = await res.json();
+                    total.value = parseFloat(data);
+                } catch (err) {
+                    console.error('获取统计失败', err);
+                }
+            };
+
+            return {
+                trades,
+                total,
+                fetchTrades,
+                fetchTotal
+            };
+        }
+    }).mount('#app');
+</script>
+</body>
+</html>

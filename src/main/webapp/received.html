@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>已收货商品评价</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <style>
+        body {
+            font-family: sans-serif;
+            background: #f0f2f5;
+            padding: 20px;
+        }
+
+        .goods-list {
+            max-width: 800px;
+            margin: auto;
+        }
+
+        .goods-card {
+            background: white;
+            margin-bottom: 20px;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .goods-title {
+            font-size: 20px;
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+
+        textarea {
+            width: 100%;
+            height: 80px;
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+        }
+
+        button {
+            margin-top: 10px;
+            padding: 8px 16px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        .success {
+            color: green;
+            margin-top: 8px;
+        }
+
+        .error {
+            color: red;
+            margin-top: 8px;
+        }
+    </style>
+</head>
+<body>
+<div id="app">
+    <div class="goods-list">
+        <div class="goods-card" v-for="item in goodsList" :key="item.gid">
+            <div class="goods-title"> {{ item.goodsname }} (ID: {{ item.gid }})</div>
+            <div>💰 价格：{{ item.price }} 元</div>
+
+            <textarea v-model="item.comment" placeholder="请输入您的评价内容..."></textarea>
+            <button @click="submitComment(item)">提交评价</button>
+            <div class="success" v-if="item.successMessage">{{ item.successMessage }}</div>
+            <div class="error" v-if="item.errorMessage">{{ item.errorMessage }}</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const { createApp, ref } = Vue;
+
+    createApp({
+        setup() {
+            const goodsList = ref([]);
+            const fetchReceivedGoods = async () => {
+                try {
+                    const response = await axios.get('/untitled7_war/trade?method=recieve');
+                    goodsList.value = response.data.map(item => ({
+                        ...item,
+                        comment: '',
+                        successMessage: '',
+                        errorMessage: ''
+                    }));
+                } catch (error) {
+                    console.error('获取已收货商品失败', error);
+                }
+            };
+
+            // 提交评价
+            const submitComment = async (item) => {
+                item.successMessage = '';
+                item.errorMessage = '';
+
+                if (!item.comment.trim()) {
+                    item.errorMessage = '评价内容不能为空';
+                    return;
+                }
+
+                try {
+                    const params = new URLSearchParams();
+                    params.append('gid', item.gid);
+                    params.append('comment', item.comment);
+
+                    await axios.post('/untitled7_war/users?method=reviews', params, {
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        withCredentials: true
+                    });
+
+                    item.successMessage = '评价成功！';
+                    item.comment = '';
+                } catch (err) {
+                    item.errorMessage = '评价提交失败：' + (err.response?.data?.error || err.message);
+                }
+            };
+
+            fetchReceivedGoods();
+
+            return {
+                goodsList,
+                submitComment
+            };
+        }
+    }).mount('#app');
+</script>
+</body>
+</html>

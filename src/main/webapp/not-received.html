@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>未收货商品</title>
+    <meta charset="UTF-8">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .product-item {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+        }
+        .price { color: #e4393c; font-weight: bold; }
+        .seller { color: #666; }
+        .loading { text-align: center; padding: 20px; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+<div id="app">
+    <h1>未收货商品列表</h1>
+
+    <!-- 加载状态 -->
+    <div v-if="isLoading" class="loading">加载中...</div>
+
+    <!-- 错误提示 -->
+    <div v-if="errorMessage" class="error">{{ errorMessage }}</div>
+
+    <!-- 商品列表 -->
+    <div v-else>
+        <div v-if="products.length === 0" class="empty">暂无未收货商品</div>
+        <div v-for="product in products" :key="product.buyusername" class="product-item">
+            <h3>{{ product.goodsname }}</h3>
+            <div class="price">价格：¥{{ formatPrice(product.price) }}</div>
+            <div class="seller">卖家：{{ product.sellusername }}</div>
+            <button @click="cancelOrder(product.gid)">取消订单</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const { createApp, ref, onMounted } = Vue;
+
+    createApp({
+        setup() {
+            const products = ref([]);
+            const isLoading = ref(true);
+            const errorMessage = ref('');
+
+            const formatPrice = (price) => {
+                if (typeof price !== 'number') {
+                    return '¥0.00';
+                }
+                return '¥' + price.toFixed(2);
+            };
+
+            const cancelOrder = async (gid) => {
+                try {
+                    const response = await axios.post('/untitled7_war/trade?method=cancel', new URLSearchParams({ gid }));
+                    alert('订单已取消');
+                    await fetchData();  // 取消成功后刷新列表
+                } catch (error) {
+                    console.error('取消失败:', error);
+                    alert('取消失败，请重试');
+                }
+            };
+
+
+            const fetchData = async () => {
+                try {
+                    isLoading.value = true;
+                    const response = await axios.get('/untitled7_war/trade?method=unrecieve');
+                    products.value = response.data;
+                    errorMessage.value = '';
+                } catch (error) {
+                    errorMessage.value = '加载失败，请检查网络或重试';
+                    console.error('Error:', error);
+                } finally {
+                    isLoading.value = false;
+                }
+            };
+
+            onMounted(fetchData);
+
+            return { products, isLoading, errorMessage, formatPrice, fetchData,cancelOrder };
+        }
+    }).mount('#app');
+</script>
+</body>
+</html>

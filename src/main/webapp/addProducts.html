@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>添加商品</title>
+  <script src="https://cdn.staticfile.org/vue/3.2.47/vue.global.prod.min.js"></script>
+  <style>
+    .radio-group {
+      margin: 10px 0;
+    }
+    .radio-group label {
+      margin-right: 15px;
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+  <h2>添加商品</h2>
+  <form @submit.prevent="submitForm" enctype="multipart/form-data">
+    <div>
+      <label>商品名称：</label>
+      <input type="text" v-model="name" required />
+    </div>
+    <div>
+      <label>价格：</label>
+      <input type="number" v-model="price" required />
+    </div>
+    <div class="radio-group">
+      <label>类型：</label>
+      <label>
+        <input type="radio" v-model="type" value="电子" required />
+        电子
+      </label>
+      <label>
+        <input type="radio" v-model="type" value="书籍" />
+        书籍
+      </label>
+      <label>
+        <input type="radio" v-model="type" value="家具" />
+        家具
+      </label>
+    </div>
+    <div>
+      <label>上传图片：</label>
+      <input type="file" @change="handleFileChange" accept="image/*" required />
+    </div>
+    <button type="submit">提交</button>
+  </form>
+</div>
+
+<script>
+  const { createApp, ref } = Vue;
+
+  createApp({
+    setup() {
+      const name = ref('');
+      const price = ref('');
+      const type = ref('电子'); // 设置默认选中值
+      const file = ref(null);
+
+      const handleFileChange = (e) => {
+        file.value = e.target.files[0];
+      };
+
+      const submitForm = async () => {
+        const formData = new FormData();
+        formData.append('name', name.value);
+        formData.append('price', price.value);
+        formData.append('image', file.value);
+        formData.append('type', type.value);
+
+        try {
+          const res = await fetch('/untitled7_war/products?method=add', {
+            method: 'POST',
+            body: formData,
+            credentials: 'include'
+          });
+          const data = await res.json();
+          alert(data.success ? '上传成功' : '上传失败');
+        } catch (err) {
+          console.error(err);
+          alert('请求失败');
+        }
+      };
+
+      return { name, price, type, handleFileChange, submitForm };
+    }
+  }).mount('#app');
+</script>
+</body>
+</html>

@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>我的商品管理</title>
+    <script src="https://unpkg.com/vue@3"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f2f2f2;
+            padding: 40px;
+        }
+        table {
+            width: 100%;
+            background: white;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 12px;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+        th {
+            background-color: #f8f8f8;
+        }
+        .delete-button {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            cursor: pointer;
+        }
+        .delete-button:hover {
+            background-color: #c0392b;
+        }
+    </style>
+</head>
+<body>
+<div id="app">
+    <h2>我的商品</h2>
+    <table v-if="products.length > 0">
+        <thead>
+        <tr>
+            <th>商品名称</th>
+            <th>价格</th>
+            <th>操作</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr v-for="item in products" :key="item.id">
+            <td>{{ item.name }}</td>
+            <td>{{ item.price.toFixed(2) }} 元</td>
+            <td>
+                <button class="delete-button" @click="confirmDelete(item.id)">删除</button>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+    <p v-else>暂无商品。</p>
+</div>
+
+<script>
+    const { createApp, ref, onMounted } = Vue
+
+    createApp({
+        setup() {
+            const products = ref([])
+
+            const fetchProducts = async () => {
+                try {
+                    const res = await axios.get('/untitled7_war/products?method=getDelete')
+                    products.value = res.data
+                } catch (err) {
+                    alert('获取商品失败')
+                }
+            }
+
+            const confirmDelete = async (id) => {
+                const confirmed = window.confirm('确认要删除这个商品吗？')
+                if (!confirmed) return
+
+                try {
+                    await axios.get('/untitled7_war/products?method=delete', {
+                        params: { id }
+                    })
+                    alert('删除成功')
+                    fetchProducts()
+                } catch (err) {
+                    alert('删除失败')
+                }
+            }
+
+            onMounted(fetchProducts)
+
+            return {
+                products,
+                confirmDelete
+            }
+        }
+    }).mount('#app')
+</script>
+</body>
+</html>

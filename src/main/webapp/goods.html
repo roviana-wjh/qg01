@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <title>商品浏览</title>
+    <!-- 修正Element Plus CSS链接 -->
+    <link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css" />
+    <style>
+        body {
+            background-color: #f5f5f5;
+            font-family: sans-serif;
+            padding: 20px;
+        }
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+        .product-img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+        .card-content {
+            padding: 15px;
+        }
+        /* 添加骨架屏图片样式 */
+        .el-skeleton__image {
+            width: 100%;
+            height: 200px;
+            border-radius: 8px;
+        }
+
+    </style>
+</head>
+<body>
+<div id="app">
+    <h2 style="text-align:center; margin-bottom: 30px;">商品浏览</h2>
+
+    <!-- 分类 & 排序 控制 -->
+    <div class="controls">
+        <el-select
+                v-model="selectedCategory"
+                placeholder="分类筛选"
+                style="width: 140px"
+                @change="fetchProducts"
+        >
+            <el-option label="全部" value=""></el-option>
+            <el-option label="电子" value="电子"></el-option>
+            <el-option label="书籍" value="书籍"></el-option>
+            <el-option label="家具" value="家具"></el-option>
+        </el-select>
+        <el-button
+                :type="sortOrder==='asc'?'primary':'default'"
+                @click="changeSort('asc')"
+        >价格升序</el-button>
+        <el-button
+                :type="sortOrder==='desc'?'primary':'default'"
+                @click="changeSort('desc')"
+        >价格降序</el-button>
+    </div>
+
+    <!-- 加载骨架屏 -->
+    <template v-if="loading">
+        <div class="grid">
+            <el-card
+                    v-for="n in 4"
+                    :key="n"
+                    shadow="hover"
+                    class="product-card"
+                    style="border: none"
+            >
+                <el-skeleton animated>
+                    <template #template>
+                        <el-skeleton-item variant="image" class="product-img" />
+                        <div class="card-content">
+                            <el-skeleton-item variant="h3" style="width: 60%; margin-bottom: 8px;" />
+                            <el-skeleton-item variant="text" style="width: 80%; margin-bottom: 6px;" />
+                            <el-skeleton-item variant="text" style="width: 40%;" />
+                        </div>
+                    </template>
+                </el-skeleton>
+            </el-card>
+        </div>
+    </template>
+
+    <!-- 商品列表 -->
+    <template v-else>
+        <div class="grid">
+            <el-card
+                    v-for="product in products"
+                    :key="product.id"
+                    shadow="hover"
+                    class="product-card"
+            >
+                <img
+                        :src="product.imageUrl"
+                        alt="商品图片"
+                        class="product-img"
+                />
+                <div class="card-content">
+                    <h3>{{ product.name }}</h3>
+                    <p>商品ID: {{ product.id }}</p>
+                    <p>卖家ID: {{ product.sellerId }}</p>
+                    <p>价格: ¥{{ product.price.toFixed(2) }}</p>
+                    <el-button
+                            type="primary"
+                            size="small"
+                            @click="gotoPay('buy', product)"
+                    >确认购买</el-button>
+                    <el-button
+                            type="success"
+                            size="small"
+                            @click="gotoPay('payLater', product)"
+                    >货到付款</el-button>
+                </div>
+            </el-card>
+        </div>
+    </template>
+</div>
+<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+<script src="https://unpkg.com/element-plus"></script>
+
+<script>
+    const { createApp, ref, onMounted } = Vue;
+    const { ElMessage } = ElementPlus;
+
+    createApp({
+        setup() {
+            const products = ref([]);
+            const loading = ref(true);
+            const selectedCategory = ref("");
+            const sortOrder = ref("");
+            const gotoPay = (actionType, product) => {
+                const params = new URLSearchParams({
+                    action: actionType,
+                    gid: product.id,
+                    name: encodeURIComponent(product.name),
+                    price: product.price,
+                    sellerId: product.sellerId
+                });
+                window.location.href = `pay.html?${params}`;
+            };
+            async function fetchProducts() {
+                loading.value = true;
+                try {
+                    let url = "/untitled7_war/product";
+                    let params = { method: "browse" };
+
+                    if (selectedCategory.value) {
+                        params.method = "selectGoodsByType";
+                        params.type = selectedCategory.value;
+                    } else if (sortOrder.value === "asc") {
+                        params.method = "orderGoods";
+                    } else if (sortOrder.value === "desc") {
+                        params.method = "orderGoodsDesc";
+                    }
+
+                    const res = await axios.get(url, { params, withCredentials: true });
+                    products.value = res.data;
+                } catch (err) {
+                    console.error("获取商品失败", err);
+                    ElMessage.error("商品加载失败");
+                } finally {
+                    loading.value = false;
+                }
+            }
+
+            function changeSort(order) {
+                sortOrder.value = order;
+                fetchProducts();
+            }
+
+            async function confirmReceived(product) {
+                try {
+                    await axios.post(
+                        "/untitled7_war/product?method=buy",
+                        null,
+                        {
+                            params: {
+                                method: "buy",
+                                gid: product.id,
+                                goodsname: product.name,
+                                sellerId: product.sellerId,
+                                price: product.price
+                            },
+                            withCredentials: true
+                        }
+                    );
+                    ElMessage.success(`成功购买：${product.name}`);
+                    fetchProducts();
+                } catch (err) {
+                    if (err.response?.status === 401) {
+                        ElMessage.warning("请先登录");
+                        window.location.href = "/login";
+                    } else {
+                        ElMessage.error("购买失败");
+                    }
+                }
+            }
+
+            async function payOnDelivery(product) {
+                try {
+                    await axios.post(
+                        "/untitled7_war/trade?method=buylater",
+                        null,
+                        {
+                            params: {
+                                method: "buyLater",
+                                gid: product.id,
+                                goodsname: product.name,
+                                sellerId: product.sellerId,
+                                price: product.price
+                            },
+                            withCredentials: true
+                        }
+                    );
+                    ElMessage.success(`已下单（货到付款）：${product.name}`);
+                    fetchProducts();
+                } catch (err) {
+                    if (err.response?.status === 401) {
+                        ElMessage.warning("请先登录");
+                        window.location.href = "/login";
+                    } else {
+                        ElMessage.error("下单失败");
+                    }
+                }
+            }
+
+            onMounted(fetchProducts);
+
+            return {
+                products,
+                loading,
+                selectedCategory,
+                sortOrder,
+                changeSort,
+                fetchProducts,
+                confirmReceived,
+                payOnDelivery,
+                gotoPay
+            };
+        }
+    }).use(ElementPlus).mount("#app");
+</script>
+</body>
+</html>

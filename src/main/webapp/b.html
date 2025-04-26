@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>用户主页</title>
+    <link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/element-plus"></script>
+    <style>
+        body {
+            background-color: #f0f2f5;
+            font-family: Arial, sans-serif;
+        }
+        .dashboard-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        .button-group {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            width: 300px;
+        }
+    </style>
+</head>
+<body>
+<div id="app">
+    <div class="dashboard-container">
+        <el-card style="width: 100%; max-width: 400px; text-align: center;">
+            <h2>欢迎回来！请选择操作</h2>
+            <div class="button-group">
+                <el-button type="primary" @click="goTo('users.html')">用户信息</el-button>
+                <el-button type="success" @click="goTo('searchTrade.html')">交易信息</el-button>
+                <el-button type="warning" @click="goTo('dealDenouce.html')">处理举报</el-button>
+                <el-button type="info" @click="goTo('dealuser.html')">用户管理</el-button>
+                <el-button type="danger" @click="goTo('dealGoods.html')">商品审核</el-button>
+            </div>
+        </el-card>
+    </div>
+</div>
+
+<script>
+    const { createApp } = Vue;
+
+    createApp({
+        setup() {
+            const goTo = (page) => {
+                window.location.href = page;
+            };
+            return { goTo };
+        }
+    }).use(ElementPlus).mount('#app');
+</script>
+</body>
+</html>

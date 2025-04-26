@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>卖家聊天室</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        textarea {
+            width: 100%;
+            resize: none;
+        }
+        .chat-box {
+            border: 1px solid #ccc;
+            padding: 10px;
+            height: 300px;
+            overflow-y: auto;
+            background-color: #f9f9f9;
+            margin-top: 10px;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+<div id="app">
+    <h2>卖家聊天室</h2>
+
+    <div>
+        <label>对方用户名：</label>
+        <input v-model="selectedUser" placeholder="输入聊天对方用户名" />
+    </div>
+
+    <div style="margin-top: 10px;">
+        <textarea v-model="inputMsg" rows="4" placeholder="输入消息..."></textarea>
+        <button @click="sendMessage">发送</button>
+    </div>
+
+    <div class="chat-box">
+        <h4>聊天记录：</h4>
+        <div v-for="(msg, index) in messages" :key="index">
+            {{ msg }}
+        </div>
+    </div>
+</div>
+
+<script>
+    const { createApp, ref, onMounted } = Vue;
+
+    createApp({
+        setup() {
+            const username = prompt("请输入你的用户名（如 sellerA）")
+            const selectedUser = ref("")
+            const inputMsg = ref("")
+            const messages = ref([])
+            let ws = null
+
+            onMounted(() => {
+                if (!username) {
+                    alert("用户名不能为空");
+                    return;
+                }
+
+                ws = new WebSocket(`ws://localhost:8080/untitled7_war/chat/${username}`)
+
+                ws.onopen = () => {
+                    messages.value.push("[系统] 已连接服务器")
+                }
+
+                ws.onmessage = (event) => {
+                    messages.value.push(event.data)
+                }
+
+                ws.onerror = () => {
+                    messages.value.push("[系统] 连接出错")
+                }
+
+                ws.onclose = () => {
+                    messages.value.push("[系统] 连接已关闭")
+                }
+            })
+
+            const sendMessage = () => {
+                if (!selectedUser.value.trim()) {
+                    alert("请先输入聊天对象的用户名")
+                    return
+                }
+                if (!inputMsg.value.trim()) return
+
+                const payload = {
+                    to: selectedUser.value.trim(),
+                    msg: inputMsg.value
+                }
+
+                ws.send(JSON.stringify(payload))
+                messages.value.push(`[我 → ${selectedUser.value}] ${inputMsg.value}`)
+                inputMsg.value = ''
+            }
+
+            return {
+                selectedUser,
+                inputMsg,
+                messages,
+                sendMessage
+            }
+        }
+    }).mount('#app')
+</script>
+</body>
+</html>
