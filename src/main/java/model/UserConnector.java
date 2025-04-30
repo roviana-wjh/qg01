@@ -309,6 +309,7 @@ public void getReview(int gid) throws SQLException {
         PreparedStatement pstmt = null;
         String sql="delete from goods where username = ? and gid = ?";
         try {
+            conn = connectionPool.getConnection();
             pstmt = conn.prepareStatement(sql);
             pstmt.setString(1, username);
             pstmt.setInt(2, gid);
