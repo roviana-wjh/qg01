@@ -38,8 +38,8 @@ public class ProductsServlet extends baseServlet{
         ossClient = new OSSClientBuilder().build(
 
                 "oss-cn-guangzhou.aliyuncs.com",
-                "LTAI5tRtwfGxzHAMYEn3RhnC",
-                "IACCvNIkFrpAi8j9U9G36luLK7kb1P"
+                "",
+                ""
         );
     }
     private void add(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
